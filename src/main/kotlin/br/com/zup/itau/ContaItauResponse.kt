@@ -3,15 +3,15 @@ package br.com.zup.itau
 import br.com.zup.TipoConta
 
 data class ContaItauResponse(
-    val tipoConta: TipoConta,
+    val tipo: TipoConta,
     val instituicao: Instituicao,
     val agencia: String,
-    val cliente: Cliente
+    val titular: Cliente
 ) {
     fun toConta(): Conta {
         return Conta(
-            cliente.nome,
-            cliente.cpf,
+            titular.nome,
+            titular.cpf,
             instituicao
         )
     }

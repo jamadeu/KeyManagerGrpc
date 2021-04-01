@@ -4,6 +4,7 @@ import br.com.zup.itau.Conta
 import java.time.LocalDateTime
 import javax.persistence.*
 import javax.validation.constraints.NotBlank
+import javax.validation.constraints.NotNull
 
 @Entity
 data class ChavePix(
@@ -14,7 +15,7 @@ data class ChavePix(
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @field:NotBlank
+    @field:NotNull
     var tipoConta: TipoConta?,
 
     @Column(nullable = false)
@@ -22,6 +23,7 @@ data class ChavePix(
     var idClient: String?,
 
     @Embedded
+    @field:NotNull
     var conta: Conta
 ) {
     @Id

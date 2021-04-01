@@ -1,5 +1,6 @@
 package br.com.zup.itau
 
+import br.com.zup.TipoConta
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
@@ -12,6 +13,6 @@ interface HttpClientItau {
     @Get("/api/v1/clientes/{clienteId}/contas{?tipo}")
     fun buscaConta(
         @PathVariable clienteId: String,
-        @QueryValue tipo: String
+        @QueryValue tipo: TipoConta
     ): HttpResponse<ContaItauResponse>
 }

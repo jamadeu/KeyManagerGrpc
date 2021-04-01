@@ -22,14 +22,14 @@ class KeyManagerServer(
         try {
             val chavePix = novaChaveService.registra(
                 request.let {
-                    it ?: throw IllegalArgumentException("Invalid request")
+                    it ?: throw IllegalArgumentException("Request invalida")
                 }.run {
                     toNovaChaveRequest()
                 }.also {
                     validaChave(it)
                 }
             )
-            logger.info("New key $chavePix")
+            logger.info("Nova chave $chavePix")
 
             val response = RegistraNovaChaveResponse.newBuilder()
                 .setIdCliente(chavePix.idClient)
