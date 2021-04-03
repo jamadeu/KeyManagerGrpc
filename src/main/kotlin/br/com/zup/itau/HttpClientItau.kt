@@ -13,6 +13,6 @@ interface HttpClientItau {
     @Get("/api/v1/clientes/{clienteId}/contas{?tipo}")
     fun buscaConta(
         @PathVariable clienteId: String,
-        @QueryValue tipo: TipoConta
+        @QueryValue tipo: String
     ): HttpResponse<ContaItauResponse>
 }

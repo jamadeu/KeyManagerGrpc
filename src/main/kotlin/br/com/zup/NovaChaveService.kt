@@ -6,6 +6,7 @@ import io.micronaut.validation.Validated
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
 import javax.inject.Singleton
+import javax.transaction.Transactional
 import javax.validation.Valid
 
 @Validated
@@ -16,6 +17,7 @@ class NovaChaveService(
 ) {
     private val logger = LoggerFactory.getLogger(NovaChaveService::class.java)
 
+    @Transactional
     fun registra(@Valid novaChave: NovaChaveRequest): ChavePix {
         logger.info("Registering new key $novaChave")
 
@@ -30,7 +32,7 @@ class NovaChaveService(
         novaChave.tipoConta ?: throw IllegalStateException("tipoConta nao pode ser nulo")
 
         logger.info("API Itau")
-        val itauResponse = httpClientItau.buscaConta(novaChave.idCliente, novaChave.tipoConta)
+        val itauResponse = httpClientItau.buscaConta(novaChave.idCliente, novaChave.tipoConta.toString())
         val conta = itauResponse.body()?.toConta() ?: throw IllegalStateException("Conta nao encontrada")
         logger.info("Conta: $conta")
 
