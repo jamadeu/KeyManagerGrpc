@@ -2,6 +2,7 @@ package br.com.zup.shared.validadores
 
 import br.com.zup.NovaChaveRequest
 import br.com.zup.TipoChave.*
+import io.micronaut.validation.validator.constraints.EmailValidator
 
 fun validaChave(novaChave: NovaChaveRequest?) {
     novaChave?.let {
@@ -23,7 +24,7 @@ fun validaChave(novaChave: NovaChaveRequest?) {
             }
 
             EMAIL -> {
-                if (it.chave.isNullOrBlank() || !it.chave.matches("^[a-z0-9.]+@[a-z0-9]+\\.[a-z]+\\.([a-z]+)?\$".toRegex())) {
+                if (it.chave.isNullOrBlank() || !EmailValidator().isValid(it.chave, null)) {
                     throw IllegalArgumentException("Email must be in the format email@email.com")
                 }
             }
