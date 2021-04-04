@@ -28,11 +28,11 @@ class NovaChaveService(
             }
         }
 
-        novaChave.idCliente ?: throw IllegalStateException("idCliente nao pode ser nulo")
-        novaChave.tipoConta ?: throw IllegalStateException("tipoConta nao pode ser nulo")
-
         logger.info("API Itau")
-        val itauResponse = httpClientItau.buscaConta(novaChave.idCliente, novaChave.tipoConta.toString())
+        val itauResponse = httpClientItau.buscaConta(
+            novaChave.idCliente ?: throw IllegalStateException("idCliente nao pode ser nulo"),
+            novaChave.tipoConta?.toString() ?: throw IllegalStateException("tipoConta nao pode ser nulo")
+        )
         val conta = itauResponse.body()?.toConta() ?: throw IllegalStateException("Conta nao encontrada")
         logger.info("Conta: $conta")
 

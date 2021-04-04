@@ -1,6 +1,5 @@
 package br.com.zup.itau
 
-import br.com.zup.TipoConta
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable

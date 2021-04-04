@@ -74,18 +74,19 @@ internal class KeyManagerServerTest(
             )
         }
     }
-}
 
-@MockBean(HttpClientItau::class)
-fun itauClient(): HttpClientItau {
-    return mock(HttpClientItau::class.java)
-}
+    @MockBean(HttpClientItau::class)
+    fun itauClient(): HttpClientItau {
+        return mock(HttpClientItau::class.java)
+    }
 
-@Factory
-class Client {
-    @Bean
-    fun blockingStub(@GrpcChannel(GrpcServerChannel.NAME) channel: ManagedChannel):
-            KeyManagerGrpcServiceGrpc.KeyManagerGrpcServiceBlockingStub? {
-        return KeyManagerGrpcServiceGrpc.newBlockingStub(channel)
+    @Factory
+    class Client {
+        @Bean
+        fun blockingStub(@GrpcChannel(GrpcServerChannel.NAME) channel: ManagedChannel):
+                KeyManagerGrpcServiceGrpc.KeyManagerGrpcServiceBlockingStub? {
+            return KeyManagerGrpcServiceGrpc.newBlockingStub(channel)
+        }
     }
 }
+
