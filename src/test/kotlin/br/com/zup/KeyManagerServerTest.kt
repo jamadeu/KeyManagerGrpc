@@ -2,11 +2,9 @@ package br.com.zup
 
 import br.com.zup.TipoChave.*
 import br.com.zup.TipoConta.CONTA_CORRENTE
-import br.com.zup.itau.Cliente
-import br.com.zup.itau.ContaItauResponse
-import br.com.zup.itau.HttpClientItau
-import br.com.zup.itau.Instituicao
+import br.com.zup.itau.*
 import io.grpc.ManagedChannel
+import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.micronaut.context.annotation.Bean
 import io.micronaut.context.annotation.Factory
@@ -76,15 +74,15 @@ internal class KeyManagerServerTest(
     @EmptySource
     @ValueSource(strings = ["cpfInvalido"])
     fun `Nao registra nova chave pix cpf esta com formato invalido, vazio ou nulo `(cpf: String?) {
-        `when`(itauClient.buscaConta(clienteId = idCliente.toString(), tipo = "CONTA_CORRENTE"))
-            .thenReturn(HttpResponse.ok(contaItauResponse(idCliente)))
-
         grpcClient.run {
             assertThrows<StatusRuntimeException> {
                 registra(registraNovaChaveRequest(tipoChave = CPF, cpf))
             }
         }.also {
             assertTrue(it.message!!.contains("O cpf deve estar no formato 00000000000"))
+        }
+        if (cpf != null) {
+            assertFalse(chavePixRepository.existsByChave(cpf))
         }
     }
 
@@ -116,15 +114,15 @@ internal class KeyManagerServerTest(
     @EmptySource
     @ValueSource(strings = ["emailInvalido"])
     fun `Nao registra nova chave pix email esta com formato invalido, vazio ou nulo `(email: String?) {
-        `when`(itauClient.buscaConta(clienteId = idCliente.toString(), tipo = "CONTA_CORRENTE"))
-            .thenReturn(HttpResponse.ok(contaItauResponse(idCliente)))
-
         grpcClient.run {
             assertThrows<StatusRuntimeException> {
                 registra(registraNovaChaveRequest(tipoChave = EMAIL, email))
             }
         }.also {
             assertTrue(it.message!!.contains("O email deve estar no formato email@email.com"))
+        }
+        if (email != null) {
+            assertFalse(chavePixRepository.existsByChave(email))
         }
     }
 
@@ -156,15 +154,16 @@ internal class KeyManagerServerTest(
     @EmptySource
     @ValueSource(strings = ["emailInvalido"])
     fun `Nao registra nova chave pix celular esta com formato invalido, vazio ou nulo `(celular: String?) {
-        `when`(itauClient.buscaConta(clienteId = idCliente.toString(), tipo = "CONTA_CORRENTE"))
-            .thenReturn(HttpResponse.ok(contaItauResponse(idCliente)))
-
         grpcClient.run {
             assertThrows<StatusRuntimeException> {
                 registra(registraNovaChaveRequest(tipoChave = CELULAR, celular))
             }
         }.also {
             assertTrue(it.message!!.contains("O celular deve estar no formato +5585988714077"))
+        }
+
+        if (celular != null) {
+            assertFalse(chavePixRepository.existsByChave(celular))
         }
     }
 
@@ -193,9 +192,6 @@ internal class KeyManagerServerTest(
 
     @Test
     fun `Nao registra nova chave pix quando o tipo da chave for ALEATORIA e a chave informada nao for nula`() {
-        `when`(itauClient.buscaConta(clienteId = idCliente.toString(), tipo = "CONTA_CORRENTE"))
-            .thenReturn(HttpResponse.ok(contaItauResponse(idCliente)))
-
         grpcClient.run {
             assertThrows<StatusRuntimeException> {
                 registra(registraNovaChaveRequest(tipoChave = ALEATORIA, "chave"))
@@ -203,6 +199,77 @@ internal class KeyManagerServerTest(
         }.also {
             assertTrue(it.message!!.contains("A chave ira ser gerada automaticamente"))
         }
+        assertFalse(chavePixRepository.existsByChave("chave"))
+
+    }
+
+    @Test
+    fun `Remove chave`() {
+        `when`(itauClient.consultaCliente(clienteId = idCliente.toString()))
+            .thenReturn(HttpResponse.ok(contaItauResponse(idCliente)))
+
+        val pix = chavePixRepository.save(chavePix())
+        grpcClient.run {
+            remove(removeChaveRequest(pix.id.toString(), idCliente = idCliente.toString()))
+        }.also {
+            assertEquals("Chave removida", it.mensagem)
+        }
+        assertTrue(chavePixRepository.findById(pix.id!!).isEmpty)
+    }
+
+    @Test
+    fun `Nao remove chave quando o idCliente e diferente do id do proprietario da chave`() {
+        `when`(itauClient.consultaCliente(clienteId = idCliente.toString()))
+            .thenReturn(HttpResponse.ok(contaItauResponse(idCliente)))
+
+        val pix = chavePixRepository.save(chavePix())
+        grpcClient.run {
+            assertThrows<StatusRuntimeException> {
+                remove(removeChaveRequest(pix.id.toString(), idCliente = "outroId"))
+            }
+        }.also {
+            assertTrue(it.message!!.contains("Somente o proprietario da chave pode remove-la"))
+        }
+        assertTrue(chavePixRepository.findById(pix.id!!).isPresent)
+    }
+
+    @Test
+    fun `Nao remove quando a chave nao existe`() {
+        `when`(itauClient.consultaCliente(clienteId = idCliente.toString()))
+            .thenReturn(HttpResponse.ok(contaItauResponse(idCliente)))
+
+        grpcClient.run {
+            assertThrows<StatusRuntimeException> {
+                remove(removeChaveRequest("1", idCliente = idCliente.toString()))
+            }
+        }.also {
+            assertAll(
+                Executable { assertTrue(it.message!!.contains("Chave nao localizada")) },
+                Executable { assertEquals(Status.NOT_FOUND.code, it.status.code) }
+            )
+        }
+    }
+
+
+    private fun chavePix() = ChavePix(
+        "chave",
+        CONTA_CORRENTE,
+        idClient = idCliente.toString(),
+        Conta(
+            "Cliente",
+            "00000000000",
+            Instituicao(
+                "UNIBANCO ITAU SA",
+                "60701190"
+            )
+        )
+    )
+
+    private fun removeChaveRequest(idChave: String?, idCliente: String?): RemoveChaveRequest {
+        return RemoveChaveRequest.newBuilder()
+            .setIdCliente(idCliente)
+            .setIdChave(idChave)
+            .build()
     }
 
     private fun registraNovaChaveRequest(tipoChave: TipoChave, chave: String?): RegistraNovaChaveRequest {

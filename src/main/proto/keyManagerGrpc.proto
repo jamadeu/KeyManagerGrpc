@@ -8,6 +8,8 @@ package br.com.zup;
 
 service KeyManagerGrpcService {
   rpc registra(RegistraNovaChaveRequest) returns (RegistraNovaChaveResponse){}
+
+  rpc remove(RemoveChaveRequest) returns (RemoveChaveResponse){}
 }
 
 enum TipoChave{
@@ -34,4 +36,13 @@ message RegistraNovaChaveRequest{
 message RegistraNovaChaveResponse{
   string idChave = 1;
   string idCliente = 2;
+}
+
+message RemoveChaveRequest{
+  string idChave = 1;
+  string idCliente = 2;
+}
+
+message RemoveChaveResponse{
+  string mensagem = 1;
 }

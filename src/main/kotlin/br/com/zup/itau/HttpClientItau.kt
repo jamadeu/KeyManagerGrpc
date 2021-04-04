@@ -14,4 +14,9 @@ interface HttpClientItau {
         @PathVariable clienteId: String,
         @QueryValue tipo: String
     ): HttpResponse<ContaItauResponse>
+
+    @Get("/api/v1/clientes/{clienteId}")
+    fun consultaCliente(
+        @PathVariable clienteId: String
+    ): HttpResponse<ContaItauResponse>
 }

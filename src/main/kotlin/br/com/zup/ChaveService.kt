@@ -1,6 +1,7 @@
 package br.com.zup
 
 import br.com.zup.itau.HttpClientItau
+import br.com.zup.shared.exceptions.ChaveNaoExisteException
 import br.com.zup.shared.exceptions.ChavePixJaExisteException
 import io.micronaut.validation.Validated
 import org.slf4j.LoggerFactory
@@ -11,15 +12,15 @@ import javax.validation.Valid
 
 @Validated
 @Singleton
-class NovaChaveService(
+class ChaveService(
     @Inject val chavePixRepository: ChavePixRepository,
     @Inject val httpClientItau: HttpClientItau
 ) {
-    private val logger = LoggerFactory.getLogger(NovaChaveService::class.java)
+    private val logger = LoggerFactory.getLogger(ChaveService::class.java)
 
     @Transactional
     fun registra(@Valid novaChave: NovaChaveRequest): ChavePix {
-        logger.info("Registering new key $novaChave")
+        logger.info("Registrando nova chave $novaChave")
 
         novaChave.chave?.let {
             if (chavePixRepository.existsByChave(it)) {
@@ -41,5 +42,26 @@ class NovaChaveService(
         logger.info("Chave $chavePix registrada")
 
         return chavePix
+    }
+
+    @Transactional
+    fun remove(@Valid request: RemoveChavePixRequest) {
+        logger.info("Removendo chave $request")
+
+        logger.info("API Itau")
+        val itauResponse = httpClientItau.consultaCliente(
+            request.idCliente ?: throw IllegalStateException("idCliente nao pode ser nulo")
+        )
+
+        val chavePix = chavePixRepository.findById(
+            request.idChave ?: throw IllegalStateException("idChave nao pode ser nulo")
+        ).orElseThrow { throw  ChaveNaoExisteException("Chave nao localizada") }
+
+        if(!chavePix.idClient.equals(request.idCliente)){
+            throw IllegalStateException("Somente o proprietario da chave pode remove-la")
+        }
+
+        chavePixRepository.deleteById(chavePix.id!!)
+        logger.info("Chave removida $chavePix")
     }
 }
